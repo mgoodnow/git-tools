@@ -9,7 +9,7 @@
 #   GIT_IS_MERGED_HOSTNAME  - optional (defaults to github.com)
 #
 # Exit codes:
-#  0 - All PRs closed and merged (was at least 1)
+#  0 - At least one PR closed and merged and has no open PRs
 #  1 - Some PRs are closed and some open
 #  2 - PRs found but either not merged or still open
 #  3 - No PRs found
@@ -64,6 +64,7 @@ def main():
 
     # Search for PRs which contain ref commit-id
     # https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests
+    # For data example, see: docs/git-search-data-example.md
     pr_search_response = github.search_issues(query)
 
     # Enable for debugging
@@ -78,10 +79,13 @@ def main():
             'title': pr.title,
             'state': pr.state,
             'is_closed_and_merged': pr.state == 'closed' and pr.pull_request.raw_data['merged_at'] != None,
+            'is_open': pr.state == 'open',
             'merged_at': pr.pull_request.raw_data['merged_at'],
             'html_url': pr.pull_request.raw_data['html_url']})
 
-    closed_and_merged = [pr['is_closed_and_merged'] for pr in pull_requests]
+    closed_and_merged_prs = [pr['is_closed_and_merged'] for pr in pull_requests]
+    open_prs = [pr['is_open'] for pr in pull_requests]
+
     titles = ["[{}] {} (merged at: {})".format(
         pr['state'].upper(),    # CLOSED|OPEN
         # pr['title'],          # Title of PR
@@ -90,13 +94,16 @@ def main():
 
     # [CLOSED] JIRA-123: Changing something - http:// - Merged: 2022-08-09T19:23:49Z
 
-    if not closed_and_merged:
+    if not closed_and_merged_prs:
         print('[NONE] There are no pull requests associated with: {}'.format(ref))
         exit_code = EXIT_CODE_NO_PR
-    elif all(closed_and_merged):
+    elif all(closed_and_merged_prs):
         print('\n'.join(titles))
         exit_code = EXIT_CODE_CLOSED_AND_MERGED
-    elif any(closed_and_merged):
+    elif any(closed_and_merged_prs) and not any(open_prs):
+        print('\n'.join(titles))
+        exit_code = EXIT_CODE_CLOSED_AND_MERGED
+    elif any(closed_and_merged_prs):
         print('\n'.join(titles))
         exit_code = EXIT_CODE_SOME_OPEN
     else:
