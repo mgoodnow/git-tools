@@ -24,11 +24,11 @@ This describes how to add tools for local usage.
        export GIT_IS_MERGED_HOSTNAME="git-corp-org.com"
        export GIT_IS_MERGED_ORG="my-org"
 
-    * Get API token from your github account: [https://github.com/settings/tokens](https://github.com/settings/tokens)  
-      If using a corporate github account, make sure to create token from it.
-    * By default `GIT_IS_MERGED_HOSTNAME` will be `github.com`, but override if using a corperate github account.
-    * Set `GIT_IS_MERGED_ORG` to limit git's api search (this only works if all your work is out of a single github org).   
-      _By setting this can speed up the API query a wee-bit._
+   * Get API token from your github account: [https://github.com/settings/tokens](https://github.com/settings/tokens)  
+     If using a corporate github account, make sure to create token from it.
+   * By default `GIT_IS_MERGED_HOSTNAME` will be `github.com`, but override if using a corperate github account.
+   * Set `GIT_IS_MERGED_ORG` to limit git's api search (this only works if all your work is out of a single github org).   
+     _By setting this can speed up the API query a wee-bit._
 
 ## Tool: git is-merged
 
@@ -89,3 +89,24 @@ Deleted branch mgoodnow-test2 (was 36f1b5e)
 Keeping:  mgoodnow-test3 - [NONE] There are no pull requests associated with: 97bf18740251e6c497fde4bbbf8c1615880e9385
 Ignoring: main
 ```
+
+## Known Issues
+
+1. For `branch-cleanup` it can only do 30 branches at a time, due to github's rate-limiting.
+   * However, `search` rates get reset after 30 seconds so ...run again!
+   * See [https://docs.github.com/en/enterprise-server@3.4/rest/rate-limit](https://docs.github.com/en/enterprise-server@3.4/rest/rate-limit)
+
+           curl \
+             -H "Accept: application/vnd.github+json" \
+             -H "Authorization: Bearer ${GIT_IS_MERGED_TOKEN}" \
+             https://git.corp.adobe.com/api/v3/rate_limit
+             
+           {
+             "resources": {
+               "search": {
+                 "limit": 30,          <=== limit
+                 "used": 0,
+                 "remaining": 30,
+                 "reset": 1668636278   <=== 30 secs from now
+               },
+               ...
