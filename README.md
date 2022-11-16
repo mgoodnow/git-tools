@@ -8,7 +8,7 @@ This describes how to add tools for local usage.
 
 1. Checkout the repo
 
-       git clone TBD
+       git clone https://github.com/mgoodnow/git-tools.git
 
 2. Add the following to the path
 
