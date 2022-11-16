@@ -1,0 +1,70 @@
+#!/bin/sh
+#
+# Safe git branch delete
+# Ensures has PR is closed and merged
+#
+
+function printHelp() {
+    echo "Usage: git branch-cleanup [-n --noop] [-v --verbose] [-h --help]"
+    echo "       -n --noop      Run in noop mode; will not cleanup any branches (default: false)"
+    echo "       -v --verbose   Print verbose output about branch PR details"
+    echo "       -h --help      Print this help"
+}
+
+IGNORED_BRANCHES="master main dev qa stage prod"
+NOOP=false
+VERBOSE=false
+HELP=false
+
+# Parse command-line arguments
+while [[ $# -gt 0 ]]; do
+    case "${1}" in
+        -n)         NOOP=true;;
+        --noop)     NOOP=true;;
+        -v)         VERBOSE=true;;
+        --verbose)  VERBOSE=true;;
+        -h)         HELP=true;;
+        --help)     HELP=true;;
+        --)         break;;
+        -*)         echo "Unrecognized option ${1}"; printHelp; exit 1;
+    esac
+    shift
+done
+
+if ${HELP}; then
+    printHelp
+    exit 0
+fi
+
+if ${NOOP}; then
+    echo "Running in NOOP mode"
+fi
+
+# Get list of all branches, e.g: refs/heads/DCAT-195-mgoodnow-dev
+for branch in $(git for-each-ref --format='%(refname)' refs/heads/); do
+    # Parse just branch name, e.g: DCAT-195-mgoodnow-dev
+    branch=${branch/refs\/heads\//}
+
+    # Ignore known branches
+    if [[ $IGNORED_BRANCHES =~ (^|[[:space:]])"${branch}"($|[[:space:]]) ]] ; then
+        echo "Ignoring: ${branch}"
+    else
+        # Determine if there is a closed PR and if PR was merged!?
+        # Possible exit codes:
+        #  0 - All PRs closed and merged (was at least 1)
+        #  1 - Some PRs are closed and some open
+        #  2 - PRs found but either not merged or still open
+        #  3 - No PRs found
+        isMerged=$(git is-merged ${branch})
+        statusCode=$?
+        ${VERBOSE} && verboseMessage=" - ${isMerged}" || verboseMessage=""
+        if [[ ${statusCode} == 0 ]]; then
+            echo "Deleting: ${branch}${verboseMessage}"
+            if ! ${NOOP}; then
+                git branch -D ${branch}
+            fi
+        else
+            echo "Keeping:  ${branch}${verboseMessage}"
+        fi
+    fi
+done

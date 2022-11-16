@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+#
+# Determine if a given branch has a closed and merged PR
+#
+# Required environment variables:
+#   GIT_IS_MERGED_USER      - required
+#   GIT_IS_MERGED_TOKEN     - required - see: https://github.com/settings/tokens
+#   GIT_IS_MERGED_ORG       - optional - if used will limit search scope
+#   GIT_IS_MERGED_HOSTNAME  - optional (defaults to github.com)
+#
+# Exit codes:
+#  0 - All PRs closed and merged (was at least 1)
+#  1 - Some PRs are closed and some open
+#  2 - PRs found but either not merged or still open
+#  3 - No PRs found
+#
+
+import os
+import sys
+from github import Github
+import argparse
+import subprocess
+# from pprint import pprint
+
+# Github hostname
+DEFAULT_HOSTNAME = 'github.com'
+
+# Exit code in relation to pull-request status
+EXIT_CODE_CLOSED_AND_MERGED = 0
+EXIT_CODE_SOME_OPEN = 1
+EXIT_CODE_OPEN_OR_NOT_MERGED = 2
+EXIT_CODE_NO_PR = 3
+
+
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument('branch', nargs='?', default='HEAD')
+    return p.parse_args()
+
+
+def main():
+    args = parse_args()
+
+    git_username = os.getenv('GIT_IS_MERGED_USER')
+    git_token = os.getenv('GIT_IS_MERGED_TOKEN')
+    git_org = os.getenv('GIT_IS_MERGED_ORG')
+    git_hostname = os.getenv('GIT_IS_MERGED_HOSTNAME')
+
+    if not git_hostname:
+        git_hostname = DEFAULT_HOSTNAME
+
+    # Get: git rev-parse <branch>
+    ref = subprocess.check_output(['git', 'rev-parse', args.branch]).strip()
+    ref = ref.decode('utf-8')
+
+    github = Github(base_url='https://' + git_hostname + '/api/v3',
+                    login_or_token=git_username,
+                    password=git_token)
+
+    if git_org:
+        query = 'q=type:pr org:{} {}'.format(git_org, ref)
+    else:
+        query = 'q=type:pr {}'.format(ref)
+
+    # Search for PRs which contain ref commit-id
+    # https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests
+    pr_search_response = github.search_issues(query)
+
+    # Enable for debugging
+    # for pr in pull_requests:
+    #     pprint(vars(pr))
+
+    # Get boolean list if PR is closed and merged
+    # Note: a PR could be closed by not merged!
+    pull_requests = []
+    for pr in pr_search_response:
+        pull_requests.append({
+            'title': pr.title,
+            'state': pr.state,
+            'is_closed_and_merged': pr.state == 'closed' and pr.pull_request.raw_data['merged_at'] != None,
+            'merged_at': pr.pull_request.raw_data['merged_at'],
+            'html_url': pr.pull_request.raw_data['html_url']})
+
+    closed_and_merged = [pr['is_closed_and_merged'] for pr in pull_requests]
+    titles = ["[{}] {} (merged at: {})".format(
+        pr['state'].upper(),    # CLOSED|OPEN
+        # pr['title'],          # Title of PR
+        pr['html_url'],         # PR URL
+        pr['merged_at'] if pr['merged_at'] else "Not merged") for pr in pull_requests]
+
+    # [CLOSED] JIRA-123: Changing something - http:// - Merged: 2022-08-09T19:23:49Z
+
+    if not closed_and_merged:
+        print('[NONE] There are no pull requests associated with: {}'.format(ref))
+        exit_code = EXIT_CODE_NO_PR
+    elif all(closed_and_merged):
+        print('\n'.join(titles))
+        exit_code = EXIT_CODE_CLOSED_AND_MERGED
+    elif any(closed_and_merged):
+        print('\n'.join(titles))
+        exit_code = EXIT_CODE_SOME_OPEN
+    else:
+        print('\n'.join(titles))
+        exit_code = EXIT_CODE_OPEN_OR_NOT_MERGED
+
+    sys.exit(exit_code)
+
+
+if __name__ == '__main__':
+    main()
