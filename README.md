@@ -14,20 +14,20 @@ This describes how to add tools for local usage.
 
        echo 'export PATH="$PATH:<your-path-here>/git-tools/commands"' >> ~/.zshenv
 
-3. Add the following environment variables for use by `is-merged` tool.
+3. Add the following environment variables for use by git tools.
 
        # Required
-       export GIT_IS_MERGED_USER="mgoodnow"
-       export GIT_IS_MERGED_TOKEN="ghp_mytoken"
+       export GIT_TOOLS_USER="mgoodnow"
+       export GIT_TOOLS_TOKEN="ghp_mytoken"
     
        # Optional
-       export GIT_IS_MERGED_HOSTNAME="git-corp-org.com"
-       export GIT_IS_MERGED_ORG="my-org"
+       export GIT_TOOLS_HOSTNAME="git-corp-org.com"
+       export GIT_TOOLS_ORG="my-org"
 
    * Get API token from your github account: [https://github.com/settings/tokens](https://github.com/settings/tokens)  
      If using a corporate github account, make sure to create token from it.
-   * By default `GIT_IS_MERGED_HOSTNAME` will be `github.com`, but override if using a corperate github account.
-   * Set `GIT_IS_MERGED_ORG` to limit git's api search (this only works if all your work is out of a single github org).   
+   * By default `GIT_TOOLS_HOSTNAME` will be `github.com`, but override if using a corporate github account.
+   * Set `GIT_TOOLS_ORG` to limit git's api search (this only works if all your work is out of a single github org).   
      _By setting this can speed up the API query a wee-bit._
 
 ## Tool: git is-merged
@@ -98,7 +98,7 @@ Ignoring: main
 
            curl \
              -H "Accept: application/vnd.github+json" \
-             -H "Authorization: Bearer ${GIT_IS_MERGED_TOKEN}" \
+             -H "Authorization: Bearer ${GIT_TOOLS_TOKEN}" \
              https://git.corp.adobe.com/api/v3/rate_limit
              
            {

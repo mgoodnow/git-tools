@@ -3,10 +3,10 @@
 # Determine if a given branch has a closed and merged PR
 #
 # Required environment variables:
-#   GIT_IS_MERGED_USER      - required
-#   GIT_IS_MERGED_TOKEN     - required - see: https://github.com/settings/tokens
-#   GIT_IS_MERGED_ORG       - optional - if used will limit search scope
-#   GIT_IS_MERGED_HOSTNAME  - optional (defaults to github.com)
+#   GIT_TOOLS_USER      - required
+#   GIT_TOOLS_TOKEN     - required - see: https://github.com/settings/tokens
+#   GIT_TOOLS_ORG       - optional - if used will limit search scope
+#   GIT_TOOLS_HOSTNAME  - optional (defaults to github.com)
 #
 # Exit codes:
 #  0 - At least one PR closed and merged and has no open PRs
@@ -41,14 +41,14 @@ def parse_args():
 def main():
     args = parse_args()
 
-    git_username = os.getenv('GIT_IS_MERGED_USER')
-    git_token = os.getenv('GIT_IS_MERGED_TOKEN')
-    git_hostname = os.getenv('GIT_IS_MERGED_HOSTNAME')
-    git_org = os.getenv('GIT_IS_MERGED_ORG')
+    git_username = os.getenv('GIT_TOOLS_USER')
+    git_token = os.getenv('GIT_TOOLS_TOKEN')
+    git_hostname = os.getenv('GIT_TOOLS_HOSTNAME')
+    git_org = os.getenv('GIT_TOOLS_ORG')
 
     # Validate required environment variables
     if not git_username or not git_token:
-        print('Required environment variables not set: GIT_IS_MERGED_USER and GIT_IS_MERGED_TOKEN')
+        print('Required environment variables not set: GIT_TOOLS_USER and GIT_TOOLS_TOKEN')
         exit(9)
 
     if not git_hostname:
