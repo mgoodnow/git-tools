@@ -43,8 +43,13 @@ def main():
 
     git_username = os.getenv('GIT_IS_MERGED_USER')
     git_token = os.getenv('GIT_IS_MERGED_TOKEN')
-    git_org = os.getenv('GIT_IS_MERGED_ORG')
     git_hostname = os.getenv('GIT_IS_MERGED_HOSTNAME')
+    git_org = os.getenv('GIT_IS_MERGED_ORG')
+
+    # Validate required environment variables
+    if not git_username or not git_token:
+        print('Required environment variables not set: GIT_IS_MERGED_USER and GIT_IS_MERGED_TOKEN')
+        exit(9)
 
     if not git_hostname:
         git_hostname = DEFAULT_HOSTNAME
