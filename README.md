@@ -6,28 +6,28 @@ These are additional git command-line tools.
 
 This describes how to add tools for local usage.
 
-1. Checkout the repo
+ 1. Checkout the repo
 
-       git clone https://github.com/mgoodnow/git-tools.git
+        git clone https://github.com/mgoodnow/git-tools.git
 
-2. Add the following to the path
+ 2. Add the following to the path
 
-       echo 'export PATH="$PATH:<your-path-here>/git-tools/commands"' >> ~/.zshenv
+        echo 'export PATH="$PATH:<your-path-here>/git-tools/commands"' >> ~/.zshenv
 
-3. Add the following environment variables for use by git tools.
+ 3. Add the following environment variables for use by git tools.
 
-       # Required
-       export GIT_TOOLS_USER="mgoodnow"
-       export GIT_TOOLS_TOKEN="ghp_mytoken"
+        # Required
+        export GIT_TOOLS_USER="mgoodnow"
+        export GIT_TOOLS_TOKEN="ghp_mytoken"
     
-       # Optional
-       export GIT_TOOLS_HOSTNAME="git-corp-org.com"
-       export GIT_TOOLS_ORG="my-org"
+        # Optional
+        export GIT_TOOLS_HOSTNAME="git-corp-org.com"
+        export GIT_TOOLS_ORG="my-org"
 
-   * Get API token from your github account: [https://github.com/settings/tokens](https://github.com/settings/tokens)  
+  * Get API token from your github account: [https://github.com/settings/tokens](https://github.com/settings/tokens)  
      If using a corporate github account, make sure to create token from it.
-   * By default `GIT_TOOLS_HOSTNAME` will be `github.com`, but override if using a corporate github account.
-   * Set `GIT_TOOLS_ORG` to limit git's api search (this only works if all your work is out of a single github org).   
+  * By default `GIT_TOOLS_HOSTNAME` will be `github.com`, but override if using a corporate github account.
+  * Set `GIT_TOOLS_ORG` to limit git's api search (this only works if all your work is out of a single github org).   
      _By setting this can speed up the API query a wee-bit._
 
 ## Tool: git is-merged
@@ -93,20 +93,21 @@ Ignoring: main
 ## Known Issues
 
 1. For `branch-cleanup` it can only do 30 branches at a time, due to github's rate-limiting.
-   * However, `search` rates get reset after 30 seconds so ...run again!
-   * See [https://docs.github.com/en/enterprise-server@3.4/rest/rate-limit](https://docs.github.com/en/enterprise-server@3.4/rest/rate-limit)
 
-           curl \
-             -H "Accept: application/vnd.github+json" \
-             -H "Authorization: Bearer ${GIT_TOOLS_TOKEN}" \
-             https://git.corp.adobe.com/api/v3/rate_limit | jq '[.resources.search]'
-             
-           {
-             "resources": {
-               "search": {
-                 "limit": 30,          <=== limit
-                 "used": 0,
-                 "remaining": 30,
-                 "reset": 1668636278   <=== 30 secs from now
-               },
-               ...
+  * However, `search` rates get reset after 30 seconds so ...run again!
+  * See [https://docs.github.com/en/enterprise-server@3.4/rest/rate-limit](https://docs.github.com/en/enterprise-server@3.4/rest/rate-limit)
+
+        curl \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${GIT_TOOLS_TOKEN}" \
+          https://git.corp.adobe.com/api/v3/rate_limit | jq '[.resources.search]'
+
+        {
+          "resources": {
+            "search": {
+              "limit": 30,          <=== limit
+              "used": 0,
+              "remaining": 30,
+              "reset": 1668636278   <=== 30 secs from now
+            },
+            ...
