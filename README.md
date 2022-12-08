@@ -99,7 +99,7 @@ Ignoring: main
            curl \
              -H "Accept: application/vnd.github+json" \
              -H "Authorization: Bearer ${GIT_TOOLS_TOKEN}" \
-             https://git.corp.adobe.com/api/v3/rate_limit
+             https://git.corp.adobe.com/api/v3/rate_limit | jq '[.resources.search]'
              
            {
              "resources": {
