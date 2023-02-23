@@ -29,6 +29,9 @@ This describes how to add tools for local usage.
   * By default `GIT_TOOLS_HOSTNAME` will be `github.com`, but override if using a corporate github account.
   * Set `GIT_TOOLS_ORG` to limit git's api search (this only works if all your work is out of a single github org).   
      _By setting this can speed up the API query a wee-bit._
+  * Install PyGithub
+
+        python3 -m pip install PyGithub
 
 ## Tool: git is-merged
 
