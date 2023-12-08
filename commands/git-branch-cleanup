@@ -61,7 +61,7 @@ for branch in $(git for-each-ref --format='%(refname)' refs/heads/); do
         if [[ ${statusCode} == 0 ]]; then
             echo "Deleting: ${branch}${verboseMessage}"
             if ! ${NOOP}; then
-                git branch -D ${branch}
+                git branch --quiet -D ${branch}
             fi
         elif [[ ${statusCode} -lt 4 ]]; then
             echo "Keeping:  ${branch}${verboseMessage}"
