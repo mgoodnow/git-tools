@@ -3,9 +3,9 @@
 # Determine if a given branch has a closed and merged PR
 #
 # Required environment variables:
-#   GIT_TOOLS_TOKEN     - required - see: https://github.com/settings/tokens
-#   GIT_TOOLS_ORG       - optional - if used will limit search scope
-#   GIT_TOOLS_HOSTNAME  - optional (defaults to github.com)
+#   GIT_TOOLS_TOKEN_<HOST>  - required - token for the origin host in the remote URL,
+#                             e.g. GIT_TOOLS_TOKEN_GITHUB_COM; see: https://github.com/settings/tokens
+#   GIT_TOOLS_ORG           - optional - if used will limit search scope
 #
 # Exit codes:
 #  0 - At least one PR closed and merged and has no open PRs
@@ -15,6 +15,7 @@
 #
 
 import os
+import re
 import sys
 from github import Github
 from github import Auth
@@ -23,13 +24,37 @@ import subprocess
 # from pprint import pprint
 
 # Github hostname
-DEFAULT_HOSTNAME = 'github.com'
+GITHUB_HOSTNAME = 'github.com'
 
 # Exit code in relation to pull-request status
 EXIT_CODE_CLOSED_AND_MERGED = 0
 EXIT_CODE_SOME_OPEN = 1
 EXIT_CODE_OPEN_OR_NOT_MERGED = 2
 EXIT_CODE_NO_PR = 3
+
+
+def remote_hosts():
+    """Return (host as written in origin URL, real hostname via `ssh -G`)."""
+    try:
+        url = subprocess.check_output(
+            ['git', 'remote', 'get-url', 'origin'],
+            stderr=subprocess.DEVNULL).decode('utf-8').strip()
+    except subprocess.CalledProcessError:
+        return None, None
+    # Extract host from ssh/https remotes: optional scheme://, optional user@, then host
+    # e.g. git@github.com:org/repo.git, ssh://git@host/org/repo.git, https://host/org/repo.git
+    m = re.match(r'^(?:\w+://)?(?:[^@/]+@)?([^:/]+)', url)
+    if not m:
+        return None, None
+    host = m.group(1)
+    try:
+        out = subprocess.check_output(['ssh', '-G', host], stderr=subprocess.DEVNULL).decode('utf-8')
+        for line in out.splitlines():
+            if line.startswith('hostname '):
+                return host, line.split(None, 1)[1]
+    except (subprocess.CalledProcessError, OSError):
+        pass
+    return host, host
 
 
 def parse_args():
@@ -41,25 +66,31 @@ def parse_args():
 def main():
     args = parse_args()
 
-    git_token = os.getenv('GIT_TOOLS_TOKEN')
-    git_hostname = os.getenv('GIT_TOOLS_HOSTNAME')
     git_org = os.getenv('GIT_TOOLS_ORG')
 
-    # Validate required environment variables
-    if not git_token:
-        print('Required environment variable not set: GIT_TOOLS_TOKEN')
+    remote_host, git_hostname = remote_hosts()
+    if not remote_host:
+        print('No origin remote found')
         exit(9)
 
-    if not git_hostname:
-        git_hostname = DEFAULT_HOSTNAME
+    # Token is keyed by the host as written in the remote URL, e.g.
+    # git@github-work:... -> GIT_TOOLS_TOKEN_GITHUB_WORK
+    token_var = 'GIT_TOOLS_TOKEN_' + re.sub(r'\W', '_', remote_host).upper()
+    git_token = os.getenv(token_var)
+    if not git_token:
+        print('Required environment variable not set: {}'.format(token_var))
+        exit(9)
 
     # Get: git rev-parse <branch>
     ref = subprocess.check_output(['git', 'rev-parse', args.branch]).strip()
     ref = ref.decode('utf-8')
 
     auth = Auth.Token(git_token)
-    github = Github(base_url='https://' + git_hostname + '/api/v3',
-                    auth=auth)
+    if git_hostname == GITHUB_HOSTNAME:
+        api_url = 'https://api.github.com'
+    else:
+        api_url = 'https://' + git_hostname + '/api/v3'
+    github = Github(base_url=api_url, auth=auth)
 
     if git_org:
         query = 'q=type:pr org:{} {}'.format(git_org, ref)

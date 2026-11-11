@@ -16,16 +16,21 @@ This describes how to add tools for local usage.
 
  3. Add the following environment variables for use by git tools.
 
-        # Required
-        export GIT_TOOLS_TOKEN="ghp_mytoken"
-    
+        # One token per remote host, named GIT_TOOLS_TOKEN_<HOST>
+        export GIT_TOOLS_TOKEN_GITHUB_COM="ghp_mytoken"
+        export GIT_TOOLS_TOKEN_GITHUB_WORK="ghp_othertoken"
+
         # Optional
-        export GIT_TOOLS_HOSTNAME="git-corp-org.com"
         export GIT_TOOLS_ORG="my-org"
 
-  * Get API token from your github account: [https://github.com/settings/tokens](https://github.com/settings/tokens)  
-     If using a corporate github account, make sure to create token from it.
-  * By default `GIT_TOOLS_HOSTNAME` will be `github.com`, but override if using a corporate github account.
+  * `<HOST>` is the host exactly as written in the repo's `origin` URL, uppercased with non-alphanumerics
+    as `_`. For `git@github.com:org/repo.git` it is `GITHUB_COM`; for an ssh alias such as
+    `git@github-work:org/repo.git` it is `GITHUB_WORK`. Use an alias to give a second account on the same
+    host its own token (see [docs/multiple-git-accounts.md](docs/multiple-git-accounts.md)).
+  * The real hostname for the API is resolved from the alias via `ssh -G`. `github.com` uses
+    `https://api.github.com`; other hosts use `https://<host>/api/v3`.
+  * Get the token from the matching github account: [https://github.com/settings/tokens](https://github.com/settings/tokens)  
+     If the org enforces SSO, authorize the token for it.
   * Set `GIT_TOOLS_ORG` to limit git's api search (this only works if all your work is out of a single github org).   
      _By setting this can speed up the API query a wee-bit._
   * Install PyGithub
@@ -102,7 +107,7 @@ Ignoring: main
         curl \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${GIT_TOOLS_TOKEN}" \
-          https://git.corp.adobe.com/api/v3/rate_limit | jq '[.resources.search]'
+          https://git.corp.example.com/api/v3/rate_limit | jq '[.resources.search]'
 
         {
           "resources": {
